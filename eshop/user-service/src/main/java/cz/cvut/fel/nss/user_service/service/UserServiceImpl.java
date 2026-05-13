@@ -39,13 +39,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     @Override
     @Transactional
     public UserDTO registerUser(RegisterRequest request) {
-        validateRegisterRequest(request);
+        // Bean Validation already passed in controller
 
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already exists: " + request.getEmail());
         }
 
         User user = userMapper.fromRegisterRequest(request);
+
         // Password from the request is in plain text - we need to hash it before saving to the database
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.CUSTOMER);
@@ -73,28 +74,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 .username(user.getEmail())
                 .password(user.getPassword())
                 .authorities(Collections.singletonList(
-                        new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
+                        new SimpleGrantedAuthority("ROLE:" + user.getRole().name())
                 ))
                 .build();
-    }
-
-    // Helpers
-
-    private void validateRegisterRequest(RegisterRequest r) {
-        if (r == null) {
-            throw new IllegalArgumentException("Request body is required");
-        }
-        if (r.getEmail() == null || r.getEmail().isBlank() || !r.getEmail().contains("@")) {
-            throw new IllegalArgumentException("Valid email is required");
-        }
-        if (r.getPassword() == null || r.getPassword().length() < 6) {
-            throw new IllegalArgumentException("Password must be at least 6 characters");
-        }
-        if (r.getName() == null || r.getName().isBlank()) {
-            throw new IllegalArgumentException("Name is required");
-        }
-        if (r.getLastName() == null || r.getLastName().isBlank()) {
-            throw new IllegalArgumentException("Last name is required");
-        }
     }
 }

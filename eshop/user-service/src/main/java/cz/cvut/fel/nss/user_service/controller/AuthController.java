@@ -4,6 +4,7 @@ import cz.cvut.fel.nss.user_service.model.DTO.LoginRequest;
 import cz.cvut.fel.nss.user_service.model.DTO.RegisterRequest;
 import cz.cvut.fel.nss.user_service.model.DTO.UserDTO;
 import cz.cvut.fel.nss.user_service.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,7 +42,7 @@ public class AuthController {
      * Returns 400 Bad Request if not valid data/duplicated email
      */
     @PostMapping("/register")
-    public ResponseEntity<UserDTO> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<UserDTO> register(@Valid @RequestBody RegisterRequest request) {
         UserDTO user = userService.registerUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
@@ -55,7 +56,7 @@ public class AuthController {
      * - If non-valid credentials returns 401 Unauthorized
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         try {
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
@@ -63,7 +64,7 @@ public class AuthController {
                             request.getPassword()
                     )
             );
-            // Pokud autentizace prošla, načteme aktuální data uživatele.
+            // If authentification passed, read actual data of user
             UserDTO user = userService.getUserByEmail(auth.getName());
             return ResponseEntity.ok(user);
         } catch (AuthenticationException ex) {

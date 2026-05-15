@@ -1,6 +1,5 @@
 package cz.cvut.fel.nss.user_service.service;
 
-import cz.cvut.fel.nss.user_service.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;

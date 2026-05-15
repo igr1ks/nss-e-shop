@@ -2,6 +2,9 @@ package cz.cvut.fel.nss.user_service.service;
 
 import cz.cvut.fel.nss.user_service.model.DTO.RegisterRequest;
 import cz.cvut.fel.nss.user_service.model.DTO.UserDTO;
+import cz.cvut.fel.nss.user_service.model.enums.Role;
+
+import java.util.List;
 
 /**
  * Service interface for user management
@@ -25,4 +28,21 @@ public interface UserService {
      * @throws IllegalArgumentException if user does not exist
      */
     UserDTO getUserByEmail(String email);
+
+    // Admin operations
+    /**
+     * Returns all users matching the given filters (Specification pattern)
+     * Any filter argument may be null to skip it.
+     */
+    List<UserDTO> searchUsers(String emailFragment, String nameFragment,
+                              String lastNameFragment, Role role);
+
+    /** Returns the DTO of the user with the given id */
+    UserDTO getUserById(Long id);
+
+    /** Changes the role of the user with the given id */
+    UserDTO changeUserRole(Long id, Role newRole);
+
+    /** Deletes the user with the given id (and all related addresses) */
+    void deleteUser(Long id);
 }

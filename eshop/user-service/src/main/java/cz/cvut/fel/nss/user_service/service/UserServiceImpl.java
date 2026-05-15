@@ -6,7 +6,9 @@ import cz.cvut.fel.nss.user_service.model.DTO.UserDTO;
 import cz.cvut.fel.nss.user_service.model.utils.UserMapper;
 import cz.cvut.fel.nss.user_service.model.enums.Role;
 import cz.cvut.fel.nss.user_service.repository.UserRepository;
-import cz.cvut.fel.nss.user_service.service.UserService;
+import cz.cvut.fel.nss.user_service.repository.specification.UserSpecifications;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -16,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Implementation of UserService and Spring-Security UserDetailsService
@@ -63,6 +66,50 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return userMapper.toUserDTO(user);
     }
 
+    // Admin operations
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserDTO> searchUsers(String emailFragment, String nameFragment, String lastNameFragment, Role role) {
+        // Specification Pattern compose filters dynamically
+        Specification<User> spec = Specification.allOf(
+                UserSpecifications.emailContains(emailFragment),
+                UserSpecifications.nameContains(nameFragment),
+                UserSpecifications.lastNameContains(lastNameFragment),
+                UserSpecifications.hasRole(role)
+        );
+
+        return userRepository.findAll(spec).stream()
+                .map(userMapper::toUserDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + id));
+        return userMapper.toUserDTO(user);
+    }
+
+    @Override
+    @Transactional
+    public UserDTO changeUserRole(Long id, Role newRole) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User not found: " + id));
+        user.setRole(newRole);
+        User saved = userRepository.save(user);
+        return userMapper.toUserDTO(saved);
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new EntityNotFoundException("User not found: " + id);
+        }
+        userRepository.deleteById(id);
+    }
+
     // Verifying login, username = email (FRQ2)
     @Override
     @Transactional(readOnly = true)
@@ -74,7 +121,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 .username(user.getEmail())
                 .password(user.getPassword())
                 .authorities(Collections.singletonList(
-                        new SimpleGrantedAuthority("ROLE:" + user.getRole().name())
+                        new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
                 ))
                 .build();
     }

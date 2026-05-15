@@ -7,7 +7,6 @@ import cz.cvut.fel.nss.user_service.model.DTO.AddressRequest;
 import cz.cvut.fel.nss.user_service.model.utils.UserMapper;
 import cz.cvut.fel.nss.user_service.repository.AddressRepository;
 import cz.cvut.fel.nss.user_service.repository.UserRepository;
-import cz.cvut.fel.nss.user_service.service.AddressService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,5 +1,6 @@
 package cz.cvut.fel.nss.orderservice.controller;
 
+import cz.cvut.fel.nss.orderservice.dto.CreateOrderRequest;
 import cz.cvut.fel.nss.orderservice.model.Order;
 import cz.cvut.fel.nss.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +26,8 @@ public class OrderController {
     }
 
     @PostMapping
-    public Order createOrder(@RequestBody Order order) {
-        return orderService.create(order);
+    public Order createOrder(@RequestBody CreateOrderRequest request) {
+        return orderService.createOrder(request);
     }
 
     @DeleteMapping("/{id}")

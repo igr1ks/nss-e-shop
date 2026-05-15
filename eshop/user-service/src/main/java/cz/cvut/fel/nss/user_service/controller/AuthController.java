@@ -1,8 +1,10 @@
 package cz.cvut.fel.nss.user_service.controller;
 
 import cz.cvut.fel.nss.user_service.model.DTO.LoginRequest;
+import cz.cvut.fel.nss.user_service.model.DTO.LoginResponse;
 import cz.cvut.fel.nss.user_service.model.DTO.RegisterRequest;
 import cz.cvut.fel.nss.user_service.model.DTO.UserDTO;
+import cz.cvut.fel.nss.user_service.service.JwtService;
 import cz.cvut.fel.nss.user_service.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,11 +29,14 @@ public class AuthController {
 
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
     public AuthController(UserService userService,
-                          AuthenticationManager authenticationManager) {
+                          AuthenticationManager authenticationManager,
+                          JwtService jwtService) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
+        this.jwtService = jwtService;
     }
 
     /**
@@ -64,9 +70,12 @@ public class AuthController {
                             request.getPassword()
                     )
             );
-            // If authentification passed, read actual data of user
-            UserDTO user = userService.getUserByEmail(auth.getName());
-            return ResponseEntity.ok(user);
+
+            UserDetails userDetails = (UserDetails) auth.getPrincipal();
+            String token = jwtService.generateToken(userDetails);
+            UserDTO user = userService.getUserByEmail(userDetails.getUsername());
+
+            return ResponseEntity.ok(new LoginResponse(token, user));
         } catch (AuthenticationException ex) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)

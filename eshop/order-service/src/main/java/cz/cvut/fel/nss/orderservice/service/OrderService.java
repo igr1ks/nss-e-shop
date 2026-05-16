@@ -8,22 +8,20 @@ import cz.cvut.fel.nss.orderservice.event.OrderCreatedEvent;
 import cz.cvut.fel.nss.orderservice.kafka.OrderEventProducer;
 import cz.cvut.fel.nss.orderservice.model.Order;
 import cz.cvut.fel.nss.orderservice.model.OrderItem;
+import cz.cvut.fel.nss.orderservice.model.state.OrderState;
+import cz.cvut.fel.nss.orderservice.model.state.OrderStateFactory;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderEventProducer orderEventProducer;
-
-    public OrderService(OrderRepository orderRepository,
-                        OrderEventProducer orderEventProducer) {
-        this.orderRepository = orderRepository;
-        this.orderEventProducer = orderEventProducer;
-    }
 
     public Order createOrder(CreateOrderRequest request) {
         Order order = new Order();
@@ -66,22 +64,39 @@ public class OrderService {
         return savedOrder;
     }
 
+    public Order payOrder(Long id) {
+        Order order = findById(id);
+
+        OrderState state = OrderStateFactory.getState(order.getStatus());
+        state.pay(order);
+
+        return orderRepository.save(order);
+    }
+
+    public Order cancelOrder(Long id) {
+        Order order = findById(id);
+
+        OrderState state = OrderStateFactory.getState(order.getStatus());
+        state.cancel(order);
+
+        return orderRepository.save(order);
+    }
+
+    public Order completeOrder(Long id) {
+        Order order = findById(id);
+
+        OrderState state = OrderStateFactory.getState(order.getStatus());
+        state.complete(order);
+
+        return orderRepository.save(order);
+    }
+
     public Order getOrderById(Long id) {
-        return orderRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        return findById(id);
     }
 
     public List<Order> getOrdersByUserId(Long userId) {
         return orderRepository.findByUserId(userId);
-    }
-
-    private ProductDto getMockProduct(Long productId) {
-        return new ProductDto(
-                productId,
-                "Mock product",
-                BigDecimal.valueOf(1000),
-                10
-        );
     }
 
     public List<Order> findAll() {
@@ -99,5 +114,14 @@ public class OrderService {
 
     public void delete(Long id) {
         orderRepository.deleteById(id);
+    }
+
+    private ProductDto getMockProduct(Long productId) {
+        return new ProductDto(
+                productId,
+                "Mock product",
+                BigDecimal.valueOf(1000),
+                10
+        );
     }
 }

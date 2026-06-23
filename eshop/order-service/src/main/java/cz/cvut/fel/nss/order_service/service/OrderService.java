@@ -1,5 +1,6 @@
 package cz.cvut.fel.nss.order_service.service;
 
+import cz.cvut.fel.nss.order_service.client.ProductClient;
 import cz.cvut.fel.nss.order_service.dao.OrderRepository;
 import cz.cvut.fel.nss.order_service.dto.CreateOrderItemRequest;
 import cz.cvut.fel.nss.order_service.dto.CreateOrderRequest;
@@ -22,6 +23,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderEventProducer orderEventProducer;
+    private final ProductClient productClient;
 
     public Order createOrder(String email, CreateOrderRequest request) {
         Order order = new Order();
@@ -32,9 +34,13 @@ public class OrderService {
         BigDecimal totalPrice = BigDecimal.ZERO;
 
         for (CreateOrderItemRequest itemRequest : request.getItems()) {
-            ProductDto product = getMockProduct(itemRequest.getProductId());
+            ProductDto product = productClient.getProductById(itemRequest.getProductId());
 
-            if (product.getStock() < itemRequest.getQuantity()) {
+            if (product == null) {
+                throw new IllegalArgumentException("Product not found");
+            }
+
+            if (!productClient.isAvailable(itemRequest.getProductId(), itemRequest.getQuantity())) {
                 throw new IllegalArgumentException("Not enough product stock");
             }
 
@@ -54,6 +60,10 @@ public class OrderService {
         order.setTotalPrice(totalPrice);
 
         Order savedOrder = orderRepository.save(order);
+
+        for (CreateOrderItemRequest itemRequest : request.getItems()) {
+            productClient.decreaseStock(itemRequest.getProductId(), itemRequest.getQuantity());
+        }
 
         orderEventProducer.sendOrderCreatedEvent(
                 new OrderCreatedEvent(
@@ -116,14 +126,5 @@ public class OrderService {
 
     public void delete(Long id) {
         orderRepository.deleteById(id);
-    }
-
-    private ProductDto getMockProduct(Long productId) {
-        return new ProductDto(
-                productId,
-                "Mock product",
-                BigDecimal.valueOf(1000),
-                10
-        );
     }
 }

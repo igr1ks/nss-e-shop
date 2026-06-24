@@ -36,11 +36,13 @@ public class CategoryService {
     }
 
     public CategoryDTO createCategory(CreateCategoryRequest request) {
-        if (categoryRepository.existsByNameIgnoreCase(request.name())) {
-            throw new IllegalArgumentException("Category already exists: " + request.name());
+        String name = request.name().trim();
+
+        if (categoryRepository.existsByNameIgnoreCase(name)) {
+            throw new IllegalArgumentException("Category with name '" + name + "' already exists.");
         }
 
-        Category category = new Category(request.name().trim());
+        Category category = new Category(name);
         Category savedCategory = categoryRepository.save(category);
 
         return categoryMapper.toDto(savedCategory);
@@ -48,13 +50,14 @@ public class CategoryService {
 
     public CategoryDTO updateCategory(Long id, UpdateCategoryRequest request) {
         Category category = findCategoryEntityById(id);
+        String newName = request.name().trim();
 
-        if (!category.getName().equalsIgnoreCase(request.name())
-                && categoryRepository.existsByNameIgnoreCase(request.name())) {
-            throw new IllegalArgumentException("Category already exists: " + request.name());
+        if (!category.getName().equalsIgnoreCase(newName)
+                && categoryRepository.existsByNameIgnoreCase(newName)) {
+            throw new IllegalArgumentException("Category with name '" + newName + "' already exists.");
         }
 
-        category.setName(request.name().trim());
+        category.setName(newName);
 
         Category savedCategory = categoryRepository.save(category);
         return categoryMapper.toDto(savedCategory);

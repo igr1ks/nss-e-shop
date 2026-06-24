@@ -32,6 +32,10 @@ public class ProductService {
     private final ProductSearchService productSearchService;
 
     public ProductDTO createProduct(CreateProductRequest request) {
+        if (productRepository.existsByNameIgnoreCase(request.name().trim())) {
+            throw new IllegalArgumentException("Product with name '" + request.name() + "' already exists.");
+        }
+
         Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new EntityNotFoundException(
                         "Category not found: " + request.categoryId()
@@ -81,8 +85,15 @@ public class ProductService {
     public ProductDTO updateProduct(Long id, UpdateProductRequest request) {
         Product product = findProductEntityById(id);
 
-        if (request.name() != null) {
-            product.setName(request.name().trim());
+        if (request.name() != null && !request.name().isBlank()) {
+            String newName = request.name().trim();
+
+            if (!product.getName().equalsIgnoreCase(newName)
+                    && productRepository.existsByNameIgnoreCase(newName)) {
+                throw new IllegalArgumentException("Product with name '" + newName + "' already exists.");
+            }
+
+            product.setName(newName);
         }
 
         if (request.description() != null) {

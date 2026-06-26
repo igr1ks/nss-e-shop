@@ -166,6 +166,17 @@ public class ProductService {
 
         return productDTO;
     }
+    public ProductDTO updateStock(Long id, Integer amount) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found: " + id));
+
+        product.setStock(product.getStock() + amount);
+
+        Product saved = productRepository.save(product);
+        productSearchService.indexProduct(saved);
+
+        return productMapper.toDto(saved);
+    }
 
     public int reindexProducts() {
         List<Product> products = productRepository.findAll();

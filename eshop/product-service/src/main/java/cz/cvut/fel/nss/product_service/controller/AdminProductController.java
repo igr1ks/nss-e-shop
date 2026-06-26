@@ -43,4 +43,12 @@ public class AdminProductController {
         int indexedProducts = productService.reindexProducts();
         return "Reindexed products: " + indexedProducts;
     }
+
+    @PatchMapping("/{id}/stock")
+    public ProductDTO updateStock(
+            @PathVariable Long id,
+            @RequestParam Integer amount
+    ) {
+        return productService.updateStock(id, amount);
+    }
 }

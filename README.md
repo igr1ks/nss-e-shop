@@ -185,6 +185,52 @@ Použit v `User Service` při autentizaci a práci s JWT tokeny.
 
 ---
 
+---
+
+# Redis Cache
+
+V `Product Service` je implementováno cachování produktů pomocí **Redis**.
+
+### Cachovaný endpoint
+
+```http
+GET /products/{id}
+```
+
+Průběh zpracování požadavku:
+
+1. Nejprve se kontroluje, zda je produkt uložen v Redis cache.
+2. Pokud je nalezen, vrátí se přímo z cache.
+3. Pokud není nalezen, načte se z PostgreSQL databáze.
+4. Následně se uloží do Redis cache pro další požadavky.
+
+TTL (Time To Live) cache je nastaveno na **10 minut**.
+
+---
+
+# Elasticsearch
+
+Vyhledávání produktů je realizováno pomocí **Elasticsearch**.
+
+### Endpoint
+
+```http
+GET /products/search?query={text}
+```
+
+Při:
+
+- vytvoření produktu,
+- úpravě produktu,
+- změně skladového množství,
+- odstranění produktu,
+
+dochází k automatické synchronizaci dat s Elasticsearch indexem.
+
+Vyhledávání probíhá nad indexem Elasticsearch, nikoliv přímo nad PostgreSQL databází.
+
+--- 
+
 # Důležité
 
 Pro správnou funkčnost aplikace musí být spuštěny všechny mikroslužby i podpůrné služby:
